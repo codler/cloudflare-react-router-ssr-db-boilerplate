@@ -1,4 +1,4 @@
-# Welcome to React Router!
+# Cloudflare React Router SSR DB Boilerplate
 
 A modern, production-ready template for building full-stack React applications using React Router.
 
@@ -10,7 +10,8 @@ A modern, production-ready template for building full-stack React applications u
 - 🔄 Data loading and mutations
 - 🔒 TypeScript by default
 - 🎉 TailwindCSS for styling
-- 📖 [React Router docs](https://reactrouter.com/)
+- 📖 React router
+- Resend for sending email
 
 ## Getting Started
 
@@ -30,6 +31,10 @@ npx wrangler@latest d1 create DATABASE
 npm run typecheck
 npx wrangler d1 migrations create DATABASE todo
 npx wrangler d1 migrations apply DATABASE --remote
+npx wrangler secret put RESEND_API_KEY
+npx wrangler secret put RESEND_FROM
+npx wrangler secret put RESEND_TO
+npm run typecheck
 ```
 
 ### Development
