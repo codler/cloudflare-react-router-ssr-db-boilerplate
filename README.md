@@ -22,6 +22,16 @@ Install the dependencies:
 npm install
 ```
 
+### First time for new project
+
+```bash
+npx wrangler kv namespace create TO_DO_LIST
+npx wrangler@latest d1 create DATABASE
+npm run typecheck
+npx wrangler d1 migrations create DATABASE todo
+npx wrangler d1 migrations apply DATABASE --remote
+```
+
 ### Development
 
 Start the development server with HMR:
@@ -69,11 +79,3 @@ You can then promote a version to production after verification or roll it out p
 ```sh
 npx wrangler versions deploy
 ```
-
-## Styling
-
-This template comes with [Tailwind CSS](https://tailwindcss.com/) already configured for a simple default starting experience. You can use whatever CSS framework you prefer.
-
----
-
-Built with ❤️ using React Router.

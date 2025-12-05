@@ -1,25 +1,17 @@
-import {
-  Form,
-  useLoaderData,
-  type ActionFunctionArgs,
-  type LoaderFunctionArgs,
-} from "react-router";
-import { TodoManager } from "@/to-do-manager";
+import { Form, useLoaderData } from "react-router";
+import type { Route } from "./+types/$id";
+import { KVManager } from "@/KVManager";
+import { DBManager } from "@/DBManager";
 
-export const loader = async ({ params, context }: LoaderFunctionArgs) => {
-  const todoManager = new TodoManager(
-    context.cloudflare.env.TO_DO_LIST,
-    params.id
-  );
+export const loader = async ({ params, context }: Route.LoaderArgs) => {
+  const todoManager = new DBManager(context.cloudflare.env.DATABASE);
   const todos = await todoManager.list();
   return { todos };
 };
 
-export async function action({ request, context, params }: ActionFunctionArgs) {
-  const todoManager = new TodoManager(
-    context.cloudflare.env.TO_DO_LIST,
-    params.id
-  );
+export async function action({ request, context, params }: Route.ActionArgs) {
+  const todoManager = new DBManager(context.cloudflare.env.DATABASE);
+
   const formData = await request.formData();
   const intent = formData.get("intent");
 

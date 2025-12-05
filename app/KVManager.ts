@@ -13,7 +13,7 @@ export interface Todo {
  * rest of the Remix application, we can easily test the logic in isolation
  * using [Cloudflare's vitest integration](https://developers.cloudflare.com/workers/testing/vitest-integration/)
  */
-export class TodoManager {
+export class KVManager {
   /**
    * Creates a new TodoManager instance
    * @param kv - The Cloudflare KV namespace instance to use for storage

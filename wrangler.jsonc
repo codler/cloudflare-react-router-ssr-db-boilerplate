@@ -20,6 +20,14 @@
       "remote": true,
     },
   ],
+  "d1_databases": [
+    {
+      "binding": "DATABASE",
+      "database_name": "DATABASE",
+      "database_id": "9c5af5c1-cf18-40ff-aa2f-97bd27f77e69",
+      "remote": true,
+    },
+  ],
   /**
    * Smart Placement
    * Docs: https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement
