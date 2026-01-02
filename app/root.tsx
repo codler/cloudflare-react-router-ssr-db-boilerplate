@@ -34,6 +34,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         {children}
+
+        <div
+          dangerouslySetInnerHTML={{ __html: "<!-- REACT_QUERY_STATE -->" }}
+        ></div>
+
         <ScrollRestoration />
         <Scripts />
       </body>

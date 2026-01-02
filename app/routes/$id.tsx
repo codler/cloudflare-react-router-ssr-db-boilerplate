@@ -2,6 +2,8 @@ import { Form, useLoaderData } from "react-router";
 import type { Route } from "./+types/$id";
 import { KVManager } from "@/KVManager";
 import { DBManager } from "@/DBManager";
+import { Suspense } from "react";
+import { useSuspenseQuery } from "@tanstack/react-query";
 
 export const loader = async ({ params, context }: Route.LoaderArgs) => {
   const todoManager = new DBManager(context.cloudflare.env.DATABASE);
@@ -41,6 +43,18 @@ export async function action({ request, context, params }: Route.ActionArgs) {
   }
 }
 
+function User() {
+  const { data } = useSuspenseQuery<{ id: number }>({
+    queryKey: ["user"],
+    queryFn: () =>
+      fetch("https://jsonplaceholder.typicode.com/todos/1").then((response) =>
+        response.json()
+      ),
+  });
+
+  return <div>User: {data.id}</div>;
+}
+
 export default function () {
   const { todos } = useLoaderData<typeof loader>();
 
@@ -50,7 +64,9 @@ export default function () {
         <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-8">
           Todo List
         </h1>
-
+        <Suspense fallback={<p>Loading…</p>}>
+          <User />
+        </Suspense>
         <Form method="post" className="mb-8 flex gap-2">
           <input
             type="text"
