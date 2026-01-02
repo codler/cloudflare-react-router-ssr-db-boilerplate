@@ -8,6 +8,10 @@ import {
   QueryClientProvider,
 } from "@tanstack/react-query";
 
+// Original default https://github.com/remix-run/react-router/blob/dev/packages/react-router-dev/config/defaults/entry.server.node.tsx
+
+export const streamTimeout = 5_000;
+
 export default async function handleRequest(
   request: Request,
   responseStatusCode: number,
@@ -15,14 +19,33 @@ export default async function handleRequest(
   routerContext: EntryContext,
   _loadContext: AppLoadContext
 ) {
+  // https://httpwg.org/specs/rfc9110.html#HEAD
+  if (request.method.toUpperCase() === "HEAD") {
+    return new Response(null, {
+      status: responseStatusCode,
+      headers: responseHeaders,
+    });
+  }
+
   let shellRendered = false;
   const userAgent = request.headers.get("user-agent");
 
   const controller = new AbortController();
-  setTimeout(() => {
-    controller.abort();
-  }, 10000);
-  const queryClient = new QueryClient();
+  // Abort the rendering stream after the `streamTimeout` so it has time to
+  // flush down the rejected boundaries
+  let timeoutId: ReturnType<typeof setTimeout> | undefined = setTimeout(
+    () => controller.abort(),
+    streamTimeout + 1000
+  );
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        // With SSR, we usually want to set some default staleTime
+        // above 0 to avoid refetching immediately on the client
+        staleTime: 60 * 1000,
+      },
+    },
+  });
 
   const body = await renderToReadableStream(
     <QueryClientProvider client={queryClient}>
@@ -49,8 +72,14 @@ export default async function handleRequest(
   }
   await body.allReady;
 
+  // Clear the timeout to prevent retaining the closure and memory leak
+  clearTimeout(timeoutId);
+  timeoutId = undefined;
+
   const dehydratedState = dehydrate(queryClient);
-  const stateScript = `<script>window.__REACT_QUERY_STATE__ = ${JSON.stringify(dehydratedState)}</script>`;
+  const stateScript = `<script>window.__REACT_QUERY_STATE__ = ${JSON.stringify(
+    dehydratedState
+  ).replace(/</g, "\\u003c")}</script>`;
 
   const stream = new ReadableStream({
     async start(controller) {
@@ -86,6 +115,7 @@ export default async function handleRequest(
     },
   });
 
+  responseHeaders.set("Cache-Control", "no-store");
   responseHeaders.set("Content-Type", "text/html");
   return new Response(stream, {
     headers: responseHeaders,
