@@ -36,6 +36,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         {children}
 
         <div
+          suppressHydrationWarning
           dangerouslySetInnerHTML={{ __html: "<!-- REACT_QUERY_STATE -->" }}
         ></div>
 
