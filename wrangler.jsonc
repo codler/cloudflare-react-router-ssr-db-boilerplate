@@ -7,7 +7,7 @@
 	"name": "fullstack",
 	"compatibility_date": "2025-12-02",
 	"compatibility_flags": ["nodejs_compat"],
-	"main": "./workers/app.ts",
+	"main": "./workers/server.ts",
 	"vars": {
 		"VALUE_FROM_CLOUDFLARE": "Hello from Cloudflare",
 	},

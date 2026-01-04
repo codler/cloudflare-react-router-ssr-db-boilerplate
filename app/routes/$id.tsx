@@ -5,9 +5,14 @@ import { DBManager } from "@/DBManager";
 import { Suspense } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 
-export const loader = async ({ params, context }: Route.LoaderArgs) => {
+export const loader = async ({ context }: Route.LoaderArgs) => {
+  if (!context.user) {
+    throw new Error("Missing user");
+  }
+
   const todoManager = new DBManager(context.cloudflare.env.DATABASE);
   const todos = await todoManager.list();
+
   return { todos };
 };
 
