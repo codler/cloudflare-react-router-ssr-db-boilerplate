@@ -3,6 +3,9 @@ import { createRequestHandler } from "react-router";
 import { Resend } from "resend";
 import { supabaseServer } from "./utils/supabase.server";
 import type { EmailOtpType, User } from "@supabase/supabase-js";
+import { trimTrailingSlash } from "hono/trailing-slash";
+import { secureHeaders } from "hono/secure-headers";
+import { prettyJSON } from "hono/pretty-json";
 
 declare module "react-router" {
   export interface AppLoadContext {
@@ -17,8 +20,15 @@ const requestHandler = createRequestHandler(
   () => import("virtual:react-router/server-build"),
   import.meta.env.MODE
 );
+
 type Variables = { user: User };
-const app = new Hono<{ Bindings: Env; Variables: Variables }>();
+const app = new Hono<{ Bindings: Env; Variables: Variables }>({
+  strict: false,
+});
+
+app.use(secureHeaders());
+app.use(trimTrailingSlash());
+app.use(prettyJSON());
 
 // Middleware: protect dashboard routes
 app.use("/dashboard/*", async (c, next) => {
