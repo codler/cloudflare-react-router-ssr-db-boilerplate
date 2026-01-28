@@ -5,13 +5,17 @@
     { "path": "./tsconfig.cloudflare.json" }
   ],
   "compilerOptions": {
+    /* Shadcn */
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./app/*"]
+    },
+
     "checkJs": true,
     "verbatimModuleSyntax": true,
     "skipLibCheck": true,
     "strict": true,
     "noEmit": true,
-    "types": [
-        "./worker-configuration.d.ts"
-    ]
+    "types": ["./worker-configuration.d.ts"]
   }
 }

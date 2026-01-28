@@ -77,9 +77,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
     return () => subscription.unsubscribe();
   }, []);
 
-  const handleLogin: React.FormEventHandler<HTMLFormElement> = async (
-    event
-  ) => {
+  const handleLogin: React.SubmitEventHandler = async (event) => {
     event.preventDefault();
     setLoading(true);
     const { error } = await supabase.auth.signInWithOtp({
