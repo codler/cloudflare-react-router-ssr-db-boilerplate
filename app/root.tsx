@@ -10,6 +10,25 @@ import {
 import type { Route } from "./+types/root";
 import "./app.css";
 
+export const meta: Route.MetaFunction = () => {
+  const title = "";
+  const description = "";
+
+  const metaDescriptor: Route.MetaDescriptors = [
+    { title },
+    { property: "og:title", content: title },
+    { name: "twitter:title", content: title },
+    {
+      name: "description",
+      content: description,
+    },
+    { property: "og:description", content: description },
+    { name: "twitter:description", content: description },
+  ];
+
+  return metaDescriptor;
+};
+
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
   {
@@ -29,6 +48,17 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta property="og:type" content="website" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <link
+          rel="icon"
+          type="image/x-icon"
+          href={`${import.meta.env.BASE_URL}favicon.ico`}
+        />
+        <link
+          rel="apple-touch-icon"
+          href={`${import.meta.env.BASE_URL}apple-icon.png`}
+        />
         <Meta />
         <Links />
       </head>
