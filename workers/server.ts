@@ -43,6 +43,18 @@ app.use("/dashboard/*", async (c, next) => {
   c.set("user", user);
   await next();
 });
+app.use("/protected/*", async (c, next) => {
+  const supabase = supabaseServer(c, c.env);
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return c.redirect("/login");
+
+  c.set("user", user);
+  await next();
+});
 
 app.get("/auth/confirm", async function (c) {
   const token_hash = c.req.query("token_hash");

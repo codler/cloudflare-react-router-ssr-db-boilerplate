@@ -14,10 +14,10 @@ export default function ProtectedPage() {
   let data = useLoaderData<typeof loader>();
 
   return (
-    <div className="flex items-center justify-center h-screen gap-2">
+    <div>
       <p>
         Hello{" "}
-        <span className="text-primary font-semibold">{String(data.user)}</span>
+        <span className="text-primary font-semibold">{JSON.stringify(data.user)}</span>
       </p>
       <a href="/logout">
         <Button>Logout</Button>
