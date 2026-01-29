@@ -6,6 +6,7 @@ import type { EmailOtpType, User } from "@supabase/supabase-js";
 import { trimTrailingSlash } from "hono/trailing-slash";
 import { secureHeaders } from "hono/secure-headers";
 import { prettyJSON } from "hono/pretty-json";
+import { createMiddleware } from "hono/factory";
 
 declare module "react-router" {
   export interface AppLoadContext {
@@ -31,7 +32,7 @@ app.use(trimTrailingSlash());
 app.use(prettyJSON());
 
 // Middleware: protect dashboard routes
-app.use("/dashboard/*", async (c, next) => {
+const authMiddleware = createMiddleware(async (c, next) => {
   const supabase = supabaseServer(c, c.env);
 
   const {
@@ -43,17 +44,17 @@ app.use("/dashboard/*", async (c, next) => {
   c.set("user", user);
   await next();
 });
-app.use("/protected/*", async (c, next) => {
-  const supabase = supabaseServer(c, c.env);
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+app.use("/dashboard.data", authMiddleware);
+app.use("/dashboard/*", authMiddleware);
+app.use("/protected.data", authMiddleware);
+app.use("/protected/*", authMiddleware);
 
-  if (!user) return c.redirect("/login");
-
-  c.set("user", user);
-  await next();
+app.get("/open/x", async (c) => {
+  return c.json({ dummy: "This" });
+});
+app.get("/protected/x", async (c) => {
+  return c.json({ dummy: "This" });
 });
 
 app.get("/auth/confirm", async function (c) {
