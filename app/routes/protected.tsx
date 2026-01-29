@@ -23,19 +23,9 @@ export default function ProtectedPage() {
     },
   });
 
-  return <div>User: {JSON.stringify(dummy)}</div>;
-
   return (
     <div>
-      <p>
-        Hello{" "}
-        <span className="text-primary font-semibold">
-          {JSON.stringify(data.user)}
-        </span>
-      </p>
-      <a href="/logout">
-        <Button>Logout</Button>
-      </a>
+      {JSON.stringify(data.user)} User: {JSON.stringify(dummy)}
     </div>
   );
 }
