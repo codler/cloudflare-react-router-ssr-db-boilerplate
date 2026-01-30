@@ -4,9 +4,9 @@ import type { Route } from "./+types/protected";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 
 export const loader = async ({ context, request }: Route.LoaderArgs) => {
-  if (!context.user) {
-    throw new Error("Missing user");
-  }
+  // if (!context.user) {
+  //   throw new Error("Missing user");
+  // }
 
   return { origin: new URL(request.url).origin, user: context.user };
 };

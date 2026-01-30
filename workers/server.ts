@@ -1,12 +1,13 @@
 import { Hono, type ExecutionContext } from "hono";
 import { createRequestHandler } from "react-router";
 import { Resend } from "resend";
-import { supabaseServer } from "./utils/supabase.server";
-import type { EmailOtpType, User } from "@supabase/supabase-js";
+import type { User } from "@supabase/supabase-js";
 import { trimTrailingSlash } from "hono/trailing-slash";
 import { secureHeaders } from "hono/secure-headers";
 import { prettyJSON } from "hono/pretty-json";
-import { createMiddleware } from "hono/factory";
+import auth from "./routes/auth/auth";
+import { authMiddleware } from "./middlewares/auth.middleware";
+import { protectedRoutes } from "./constants";
 
 declare module "react-router" {
   export interface AppLoadContext {
@@ -23,163 +24,25 @@ const requestHandler = createRequestHandler(
 );
 
 type Variables = { user: User };
-const app = new Hono<{ Bindings: Env; Variables: Variables }>({
-  strict: false,
-});
+const app = new Hono<{ Bindings: Env; Variables: Variables }>();
 
 app.use(secureHeaders());
 app.use(trimTrailingSlash());
 app.use(prettyJSON());
 
-// Middleware: protect dashboard routes
-const authMiddleware = createMiddleware(async (c, next) => {
-  const supabase = supabaseServer(c, c.env);
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) return c.redirect("/login");
-
-  c.set("user", user);
-  await next();
-});
-
-app.use("/dashboard.data", authMiddleware);
-app.use("/dashboard/*", authMiddleware);
-app.use("/protected.data", authMiddleware);
-app.use("/protected/*", authMiddleware);
-
-app.get("/open/x", async (c) => {
-  return c.json({ dummy: "This" });
-});
-app.get("/protected/x", async (c) => {
-  return c.json({ dummy: "This" });
-});
-
-app.get("/auth/confirm", async function (c) {
-  const token_hash = c.req.query("token_hash");
-  const type = c.req.query("type") as EmailOtpType | null;
-  const _next = c.req.query("next");
-  const origin = new URL(c.req.url).origin;
-  const next = _next?.startsWith(`${origin}/`)
-    ? _next.slice(origin.length)
-    : "/";
-
-  if (token_hash && type) {
-    const supabase = supabaseServer(c, c.env);
-
-    const { error } = await supabase.auth.verifyOtp({
-      type,
-      token_hash,
-    });
-
-    if (!error) {
-      return c.redirect(`/${next.slice(1)}`, 303);
-    } else {
-      return c.redirect(`/auth/error?error=${error?.message}`, 303);
-    }
-  }
-
-  // return the user to an error page with some instructions
-  return c.redirect("/auth/auth-code-error", 303);
-});
-
-app.post("/auth/forgot-password", async (c) => {
-  const { email } = await c.req.json();
-  const supabase = supabaseServer(c, c.env);
-  const origin = new URL(c.req.url).origin;
-
-  // Send the actual reset password email
-  const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${origin}/update-password`,
+function requireAuth(routes: string[]) {
+  routes.forEach((route) => {
+    app.use(`${route}.data`, authMiddleware);
+    app.use(`${route}/*`, authMiddleware);
+    app.use(route, authMiddleware);
   });
+}
 
-  if (error) {
-    return c.json(
-      {
-        error: error instanceof Error ? error.message : "An error occurred",
-      },
-      400
-    );
-  }
+requireAuth(protectedRoutes);
 
-  return c.json({ success: true });
-});
+app.route("/auth", auth);
 
-app.post("/auth/login", async (c) => {
-  const supabase = supabaseServer(c, c.env);
-  const { email, password } = await c.req.json();
-
-  const { error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
-
-  if (error) {
-    return c.json(
-      { error: error instanceof Error ? error.message : "An error occurred" },
-      400
-    );
-  }
-
-  return c.json({ success: true });
-});
-
-app.post("/auth/logout", async (c) => {
-  const supabase = supabaseServer(c, c.env);
-
-  const { error } = await supabase.auth.signOut();
-
-  if (error) {
-    return c.json(
-      { error: error instanceof Error ? error.message : "An error occurred" },
-      400
-    );
-  }
-
-  return c.json({ success: true });
-});
-
-app.post("/auth/signup", async (c) => {
-  const supabase = supabaseServer(c, c.env);
-  const { email, password } = await c.req.json();
-  const origin = new URL(c.req.url).origin;
-
-  const { error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      emailRedirectTo: `${origin}/protected`,
-    },
-  });
-
-  if (error) {
-    return c.json(
-      { error: error instanceof Error ? error.message : "An error occurred" },
-      400
-    );
-  }
-
-  return c.json({ success: true });
-});
-
-app.post("/auth/update-password", async (c) => {
-  const supabase = supabaseServer(c, c.env);
-  const { password } = await c.req.json();
-
-  const { error } = await supabase.auth.updateUser({ password });
-
-  if (error) {
-    return c.json(
-      { error: error instanceof Error ? error.message : "An error occurred" },
-      400
-    );
-  }
-
-  return c.json({ success: true });
-});
-
+// Experimental: send email via Resend
 app.get("/email", async (c) => {
   const resend = new Resend(c.env.RESEND_API_KEY);
 

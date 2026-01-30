@@ -3,6 +3,7 @@ export interface Todo {
   text: string;
   completed: boolean;
   createdAt: number;
+  userId: string;
 }
 
 /**
@@ -61,14 +62,17 @@ export class DBManager {
    * @param text - The text content of the todo item
    * @returns Promise containing the newly created Todo item
    */
-  async create(text: string): Promise<Todo> {
+  async create(text: string, userId: string): Promise<Todo> {
     const newTodo: Omit<Todo, "id" | "createdAt"> = {
       text,
       completed: false,
+      userId,
     };
     const { meta } = await this.db
-      .prepare(`INSERT INTO ${this.tableKey} (text, completed) VALUES (?, ?)`)
-      .bind(newTodo.text, newTodo.completed ? 1 : 0)
+      .prepare(
+        `INSERT INTO ${this.tableKey} (text, completed, userId) VALUES (?, ?, ?)`
+      )
+      .bind(newTodo.text, newTodo.completed ? 1 : 0, newTodo.userId)
       .run();
 
     const todo = await this.get(meta.last_row_id.toString());
@@ -82,8 +86,12 @@ export class DBManager {
    * @returns Promise containing the updated Todo item
    * @throws Error if the todo item with the specified ID is not found
    */
-  async toggle(id: string): Promise<Todo> {
+  async toggle(id: string, userId: string): Promise<Todo> {
     const todo = await this.get(id);
+
+    if (todo.userId !== userId) {
+      throw new Error(`User ${userId} does not own todo with id ${id}`);
+    }
 
     todo.completed = !todo.completed;
 
@@ -104,7 +112,13 @@ export class DBManager {
    * @param id - The unique identifier of the todo item to delete
    * @returns Promise that resolves when the deletion is complete
    */
-  async delete(id: string): Promise<void> {
+  async delete(id: string, userId: string): Promise<void> {
+    const todo = await this.get(id);
+
+    if (todo.userId !== userId) {
+      throw new Error(`User ${userId} does not own todo with id ${id}`);
+    }
+
     const { success } = await this.db
       .prepare(`DELETE FROM ${this.tableKey} WHERE id = ? LIMIT 1`)
       .bind(id)

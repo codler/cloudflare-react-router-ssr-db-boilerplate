@@ -1,22 +1,34 @@
 import { Form, useLoaderData } from "react-router";
-import type { Route } from "./+types/$id";
+import type { Route } from "./+types/_layout.$";
 import { KVManager } from "@/KVManager";
 import { DBManager } from "@/DBManager";
-import { Suspense } from "react";
+import { Suspense, type FC } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
+import { Box, TypographyH2 } from "@/components/ui";
+import type { User } from "@supabase/supabase-js";
+
+const NotFound: FC<{ children?: React.ReactNode }> = ({ children }) => {
+  return (
+    <Box className="max-w-250 mx-auto">
+      <TypographyH2>404 Page not found</TypographyH2>
+
+      {children}
+    </Box>
+  );
+};
 
 export const loader = async ({ context }: Route.LoaderArgs) => {
-  if (!context.user) {
-    throw new Error("Missing user");
-  }
-
   const todoManager = new DBManager(context.cloudflare.env.DATABASE);
   const todos = await todoManager.list();
 
-  return { todos };
+  return { todos, user: context.user as User | undefined };
 };
 
 export async function action({ request, context, params }: Route.ActionArgs) {
+  if (!context.user) {
+    throw new Error("Missing user");
+  }
+  const user = context.user as User;
   const todoManager = new DBManager(context.cloudflare.env.DATABASE);
 
   const formData = await request.formData();
@@ -27,19 +39,19 @@ export async function action({ request, context, params }: Route.ActionArgs) {
       const text = formData.get("text");
       if (typeof text !== "string" || !text)
         return Response.json({ error: "Invalid text" }, { status: 400 });
-      await todoManager.create(text);
+      await todoManager.create(text, user.id);
       return { success: true };
     }
 
     case "toggle": {
       const id = formData.get("id") as string;
-      await todoManager.toggle(id);
+      await todoManager.toggle(id, user.id);
       return { success: true };
     }
 
     case "delete": {
       const id = formData.get("id") as string;
-      await todoManager.delete(id);
+      await todoManager.delete(id, user.id);
       return { success: true };
     }
 
@@ -57,11 +69,11 @@ function User() {
       ),
   });
 
-  return <div>User: {data.id}</div>;
+  return <div>x: {data.id}</div>;
 }
 
 export default function () {
-  const { todos } = useLoaderData<typeof loader>();
+  const { todos, user } = useLoaderData<typeof loader>();
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 py-8 px-4">
@@ -98,6 +110,7 @@ export default function () {
               <Form method="post" className="flex-1 flex items-center gap-2">
                 <input type="hidden" name="id" value={todo.id} />
                 <button
+                  disabled={user?.id !== todo.userId}
                   type="submit"
                   name="intent"
                   value="toggle"
@@ -113,17 +126,19 @@ export default function () {
                 </button>
               </Form>
 
-              <Form method="post">
-                <input type="hidden" name="id" value={todo.id} />
-                <button
-                  type="submit"
-                  name="intent"
-                  value="delete"
-                  className="text-red-500 hover:text-red-700"
-                >
-                  Delete
-                </button>
-              </Form>
+              {user?.id === todo.userId && (
+                <Form method="post">
+                  <input type="hidden" name="id" value={todo.id} />
+                  <button
+                    type="submit"
+                    name="intent"
+                    value="delete"
+                    className="text-red-500 hover:text-red-700"
+                  >
+                    Delete
+                  </button>
+                </Form>
+              )}
             </li>
           ))}
         </ul>
