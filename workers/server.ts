@@ -42,6 +42,11 @@ requireAuth(protectedRoutes);
 
 app.route("/auth", auth);
 
+// example public route
+app.get("/public", (c) => {
+  return c.json({ message: "This is a public api endpoint" });
+});
+
 // Experimental: send email via Resend
 app.get("/email", async (c) => {
   const resend = new Resend(c.env.RESEND_API_KEY);
