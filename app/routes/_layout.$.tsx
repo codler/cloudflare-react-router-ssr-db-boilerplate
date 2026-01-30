@@ -92,6 +92,7 @@ export default function () {
             placeholder="Add a new todo..."
           />
           <button
+            disabled={!user}
             type="submit"
             name="intent"
             value="create"
