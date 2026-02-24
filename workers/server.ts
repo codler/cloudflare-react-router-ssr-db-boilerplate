@@ -27,7 +27,7 @@ type Variables = { user: User };
 const app = new Hono<{ Bindings: Env; Variables: Variables }>();
 
 app.use(secureHeaders());
-app.use(trimTrailingSlash());
+app.use(trimTrailingSlash({ alwaysRedirect: true }));
 app.use(prettyJSON());
 
 function requireAuth(routes: string[]) {
